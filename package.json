@@ -1,0 +1,28 @@
+{
+  "name": "bsky-edit",
+  "version": "0.1.0",
+  "license": "CC-BY-NC-SA-4.0",
+  "author": "Ayrlin Renata",
+  "description": "Adds an Edit function to the post menu on bsky.app.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack --config webpack.config.js"
+  },
+  "keywords": [],
+  "dependencies": {
+    "@atproto/api": "^0.18.16",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.33",
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
+    "copy-webpack-plugin": "^13.0.1",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.3",
+    "webpack": "^5.104.1",
+    "webpack-cli": "^6.0.1"
+  }
+}
