@@ -180,6 +180,11 @@ function injectEditButton(menuNode: HTMLElement, deleteBtn: HTMLElement) {
     btn.onclick = (e) => {
         e.stopPropagation();
 
+        if (!isContextValid()) {
+            showToast('BlueSky Edit Extension updated. Please refresh the page to continue.', 'error');
+            return;
+        }
+
         document.dispatchEvent(new KeyboardEvent('keydown', {
             key: 'Escape',
             code: 'Escape',
@@ -244,7 +249,16 @@ function showToast(message: string, type: 'success' | 'error' = 'success') {
     }, 4000);
 }
 
+function isContextValid() {
+    return !!(chrome.runtime && chrome.runtime.id);
+}
+
 function handleEditClick(urlOrUri: string) {
+    if (!isContextValid()) {
+        showToast('BlueSky Edit Extension updated. Please refresh the page to continue.', 'error');
+        return;
+    }
+
     chrome.storage.local.get(['appPassword', 'handle'], (result) => {
         const isAuthMissing = !result.appPassword || !result.handle;
 

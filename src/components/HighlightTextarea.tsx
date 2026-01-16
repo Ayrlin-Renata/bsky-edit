@@ -66,20 +66,39 @@ export const HighlightTextarea: React.FC<HighlightTextareaProps> = ({ value, onC
         );
     };
 
+    const sharedStyles: React.CSSProperties = {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        padding: '12px',
+        borderRadius: '6px',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        fontSize: '16px',
+        lineHeight: '1.5',
+        whiteSpace: 'pre-wrap',
+        wordWrap: 'break-word',
+        overflowWrap: 'break-word',
+        boxSizing: 'border-box',
+        border: '1px solid transparent',
+        margin: 0,
+        textAlign: 'left',
+        letterSpacing: 'normal',
+        textTransform: 'none',
+        wordSpacing: 'normal'
+    };
+
     return (
         <div ref={containerRef} style={{ position: 'relative', minHeight: '120px', marginBottom: '12px' }}>
             <div
                 ref={backdropRef}
                 style={{
-                    position: 'absolute', top: 0, left: 0, width: '100%',
-                    padding: '12px', borderRadius: '6px',
+                    ...sharedStyles,
                     backgroundColor: theme.inputBg,
                     color: theme.text,
-                    fontFamily: 'inherit', fontSize: '16px', lineHeight: '1.25',
-                    whiteSpace: 'pre-wrap', wordWrap: 'break-word',
-                    overflow: 'hidden', boxSizing: 'border-box',
-                    pointerEvents: 'none', zIndex: 1,
-                    border: '1px solid transparent'
+                    overflow: 'hidden',
+                    pointerEvents: 'none',
+                    zIndex: 1
                 }}
             >
                 {renderHighlights(value)}
@@ -92,14 +111,13 @@ export const HighlightTextarea: React.FC<HighlightTextareaProps> = ({ value, onC
                 onChange={(e) => onChange(e.target.value)}
                 onScroll={handleScroll}
                 style={{
-                    position: 'absolute', top: 0, left: 0, width: '100%',
-                    padding: '12px', borderRadius: '6px',
-                    border: 'none', backgroundColor: 'transparent',
-                    color: 'transparent', caretColor: theme.text,
-                    fontFamily: 'inherit', fontSize: '16px', lineHeight: '1.25',
-                    resize: 'none', outline: 'none',
-                    boxSizing: 'border-box', zIndex: 2,
-                    whiteSpace: 'pre-wrap', wordWrap: 'break-word',
+                    ...sharedStyles,
+                    backgroundColor: 'transparent',
+                    color: 'transparent',
+                    caretColor: theme.text,
+                    resize: 'none',
+                    outline: 'none',
+                    zIndex: 2,
                     overflow: 'hidden',
                     display: 'block'
                 }}
