@@ -6,9 +6,10 @@ interface HighlightTextareaProps {
     onChange: (v: string) => void;
     theme: ThemeColors;
     placeholder?: string;
+    onPaste?: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void;
 }
 
-export const HighlightTextarea: React.FC<HighlightTextareaProps> = ({ value, onChange, theme, placeholder = "What's up?" }) => {
+export const HighlightTextarea: React.FC<HighlightTextareaProps> = ({ value, onChange, theme, placeholder = "What's up?", onPaste }) => {
     const backdropRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -123,6 +124,7 @@ export const HighlightTextarea: React.FC<HighlightTextareaProps> = ({ value, onC
                 }}
                 placeholder={placeholder}
                 spellCheck={false}
+                onPaste={onPaste}
             />
         </div>
     );

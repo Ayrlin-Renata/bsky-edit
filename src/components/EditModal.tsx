@@ -97,6 +97,22 @@ export const EditModal: React.FC<EditModalProps> = ({ originalText, originalEmbe
         if (files && files.length > 0) await uploadFiles(files);
     };
 
+    const handlePaste = async (e: React.ClipboardEvent) => {
+        const items = e.clipboardData.items;
+        const files: File[] = [];
+
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                const blob = items[i].getAsFile();
+                if (blob) files.push(blob);
+            }
+        }
+
+        if (files.length > 0) {
+            await uploadFiles(files);
+        }
+    };
+
     const uploadFiles = async (files: FileList | File[]) => {
         let currentCount = 0;
         if (viewEmbed) {
@@ -394,7 +410,7 @@ export const EditModal: React.FC<EditModalProps> = ({ originalText, originalEmbe
                     <AuthForm handle={handle} setHandle={setHandle} appPassword={appPassword} setAppPassword={setAppPassword} onSave={handleAuthSubmit} onCancel={onClose} saving={saving} theme={theme} saveLabel="Save & Continue" showCancel={true} />
                 ) : (
                     <div>
-                        <HighlightTextarea value={text} onChange={setText} theme={theme} />
+                        <HighlightTextarea value={text} onChange={setText} theme={theme} onPaste={handlePaste} />
                         {renderAttachments()}
                         <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'rgba(255, 171, 0, 0.1)', borderLeft: '4px solid #FFAB00', borderRadius: '4px', color: theme.text }}><p style={{ margin: 0, fontSize: '13px', lineHeight: '18px' }}><strong>Warning:</strong> Editing will <strong>reset all likes, reposts, and update the post date/time</strong>.</p></div>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px' }}>
