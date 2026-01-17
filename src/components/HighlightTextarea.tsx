@@ -20,7 +20,6 @@ export const HighlightTextarea: React.FC<HighlightTextareaProps> = ({ value, onC
         }
     };
 
-    // Auto-expand height
     useEffect(() => {
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';

@@ -170,7 +170,7 @@ function injectEditButton(menuNode: HTMLElement, deleteBtn: HTMLElement) {
     iconDiv.appendChild(svg);
 
     const textDiv = document.createElement('div');
-    textDiv.innerText = 'Edit Post';
+    textDiv.innerText = 'Edit post';
     textDiv.style.cssText = `
         flex: 1 1 0%; 
         font-family: ${fontFamily}; 
@@ -290,7 +290,6 @@ async function fetchPostDetails(urlOrUri: string) {
             return response.data;
         } else {
             console.error("Failed to fetch post:", response?.error);
-            // Fallback for current page or matched element
             if (urlOrUri.startsWith('at://')) {
                 const postEl = document.querySelector(`[data-uri="${urlOrUri}"]`);
                 if (postEl) {
@@ -327,7 +326,6 @@ async function handleEditClick(urlOrUri: string) {
         onClose: closeModal,
         onAuthSave: async (creds: { handle: string, appPassword: string }) => {
             await browser.storage.local.set(creds);
-            // After saving auth, try to fetch the post
             const newData = await fetchPostDetails(urlOrUri);
             return newData;
         },
