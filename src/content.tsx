@@ -21,37 +21,53 @@ function closeModal() {
     }
 }
 
+// Track the URI of the post that was most recently interacted with (via "More options" menu)
 let lastInteractedPostUri: string | null = null;
+
+/**
+ * Finds the most relevant post URI/URL from the given trigger or its parents.
+ */
+function findPostUriFromTrigger(trigger: HTMLElement): string | null {
+    // 1. Check for data-uri attribute directly on parent (BlueSky sometimes uses this)
+    const postContainer = trigger.closest('[data-uri]');
+    if (postContainer) {
+        return postContainer.getAttribute('data-uri');
+    }
+
+    // 2. Check for common post container test IDs
+    // feedItem- is used in the main feed
+    // postThreadItem- is used for replies/parents in threads
+    // postDetail- is used for the focused post on the detail page
+    const container = trigger.closest('[data-testid^="feedItem-"], [data-testid^="postThreadItem-"], [data-testid="postDetail"]');
+
+    if (container) {
+        // Look for a link that points to a post (/profile/*/post/*)
+        // Usually the timestamp link is the most reliable
+        const links = container.querySelectorAll('a[href*="/post/"]');
+
+        // Priority 1: Link with a tooltip (usually the timestamp)
+        for (const link of Array.from(links)) {
+            if (link.getAttribute('data-tooltip') || (link as HTMLElement).title) {
+                return (link as HTMLAnchorElement).href;
+            }
+        }
+
+        // Priority 2: Any link containing /post/
+        if (links.length > 0) {
+            return (links[0] as HTMLAnchorElement).href;
+        }
+    }
+
+    return null;
+}
 
 document.addEventListener('click', (event) => {
     const target = event.target as HTMLElement;
-    const trigger = target.closest('button[aria-label="More options"], [data-testid="postDropdownBtn"], [aria-label="Post menu"]');
+    const trigger = target.closest('button[aria-label="More options"], [data-testid="postDropdownBtn"], [aria-label="Post menu"], [aria-label="Open post options menu"]');
 
     if (trigger) {
-        const postContainer = trigger.closest('[data-uri]');
-        if (postContainer) {
-            lastInteractedPostUri = postContainer.getAttribute('data-uri');
-            console.log('BlueSky Edit: Captured URI (data-uri)', lastInteractedPostUri);
-        } else {
-            const feedItem = trigger.closest('[data-testid^="feedItem-"]');
-            if (feedItem) {
-                const timestampLink = feedItem.querySelector('a[href*="/post/"][data-tooltip]');
-                if (timestampLink) {
-                    lastInteractedPostUri = (timestampLink as HTMLAnchorElement).href;
-                    console.log('BlueSky Edit: Captured URI (timestamp)', lastInteractedPostUri);
-                } else {
-                    const anyPostLink = feedItem.querySelector('a[href*="/post/"]');
-                    if (anyPostLink) {
-                        lastInteractedPostUri = (anyPostLink as HTMLAnchorElement).href;
-                        console.log('BlueSky Edit: Captured URI (fallback link)', lastInteractedPostUri);
-                    } else {
-                        lastInteractedPostUri = null;
-                    }
-                }
-            } else {
-                lastInteractedPostUri = null;
-            }
-        }
+        lastInteractedPostUri = findPostUriFromTrigger(trigger as HTMLElement);
+        console.log('BlueSky Edit: Captured URI:', lastInteractedPostUri);
     }
 }, true);
 
@@ -204,10 +220,10 @@ function injectEditButton(menuNode: HTMLElement, deleteBtn: HTMLElement) {
 
         let uri = lastInteractedPostUri;
 
-        if (!uri) {
-            if (window.location.href.includes('/post/')) {
-                uri = window.location.href;
-            }
+        // Fallback to URL only if we are on a post page AND we didn't capture a different post
+        // This handles cases where the user is looking at a post detail and clicks the "main" options button
+        if (!uri && window.location.href.includes('/post/')) {
+            uri = window.location.href;
         }
 
         if (!uri) {
