@@ -40,7 +40,7 @@ module.exports = (env) => {
             new CopyPlugin({
                 patterns: [
                     { from: `public/${manifestFile}`, to: "manifest.json" },
-                    { from: "public/bsky-edit.png", to: "bsky-edit.png" },
+                    { from: "public/icon*.png", to: "[name][ext]" },
                     { from: "public/popup.html", to: "popup.html" },
                     { from: "LICENSE", to: "." },
                     { from: "README.md", to: "." },

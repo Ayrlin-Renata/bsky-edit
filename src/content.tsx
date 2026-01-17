@@ -154,11 +154,20 @@ function injectEditButton(menuNode: HTMLElement, deleteBtn: HTMLElement) {
 
     const iconDiv = document.createElement('div');
     iconDiv.style.cssText = 'display: flex; align-items: center; justify-content: center;';
-    iconDiv.innerHTML = `
-        <svg viewBox="0 0 24 24" width="20" height="20" style="color: inherit; fill: currentColor;">
-            <path fill="currentColor" stroke="none" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-        </svg>
-    `;
+    const svgNamespace = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNamespace, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", "20");
+    svg.setAttribute("height", "20");
+    svg.style.cssText = "color: inherit; fill: currentColor;";
+
+    const path = document.createElementNS(svgNamespace, "path");
+    path.setAttribute("fill", "currentColor");
+    path.setAttribute("stroke", "none");
+    path.setAttribute("d", "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z");
+
+    svg.appendChild(path);
+    iconDiv.appendChild(svg);
 
     const textDiv = document.createElement('div');
     textDiv.innerText = 'Edit Post';
@@ -223,21 +232,43 @@ function showToast(message: string, type: 'success' | 'error' = 'success') {
     }
 
     const toast = document.createElement('div');
-    const icon = type === 'success' ?
-        `<svg fill="none" viewBox="0 0 24 24" width="20" height="20"><path fill="#FFFFFF" stroke="none" stroke-width="0" stroke-linecap="butt" stroke-linejoin="miter" fill-rule="evenodd" clip-rule="evenodd" d="M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16ZM2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm13.633-3.274a1 1 0 0 1 .141 1.407l-4.5 5.5a1 1 0 0 1-1.481.074l-2-2a1 1 0 1 1 1.414-1.414l1.219 1.219 3.8-4.645a1 1 0 0 1 1.407-.141Z"></path></svg>` :
-        `<svg fill="none" viewBox="0 0 24 24" width="20" height="20"><path fill="#FF4444" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`;
-
+    const innerContainer = document.createElement('div');
     const bgColor = type === 'success' ? 'rgb(28, 39, 54)' : 'rgb(54, 28, 28)';
     const borderColor = type === 'success' ? 'rgb(44, 58, 78)' : 'rgb(78, 44, 44)';
 
-    toast.innerHTML = `
-        <div style="flex: 1 1 0%; padding: 14px 16px; border-radius: 12px; border-width: 1px; border-style: solid; display: flex; flex-direction: row; gap: 8px; box-shadow: rgba(0, 0, 0, 0.4) 0px 4px 6px -1px, rgba(0, 0, 0, 0.4) 0px 2px 4px -2px, rgb(0, 0, 0) 0px 0px 0px; background-color: ${bgColor}; border-color: ${borderColor}; align-items: center;">
-            ${icon}
-            <div style="flex: 1 1 0%; padding-right: 16px;">
-                <div dir="auto" style="font-size: 15px; letter-spacing: 0px; color: rgb(255, 255, 255); font-weight: 500; line-height: 20px; pointer-events: none; font-variant: no-contextual;">${message}</div>
-            </div>
-        </div>
-    `;
+    innerContainer.style.cssText = `flex: 1 1 0%; padding: 14px 16px; border-radius: 12px; border-width: 1px; border-style: solid; display: flex; flex-direction: row; gap: 8px; box-shadow: rgba(0, 0, 0, 0.4) 0px 4px 6px -1px, rgba(0, 0, 0, 0.4) 0px 2px 4px -2px, rgb(0, 0, 0) 0px 0px 0px; background-color: ${bgColor}; border-color: ${borderColor}; align-items: center;`;
+
+    const svgNamespace = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNamespace, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", "20");
+    svg.setAttribute("height", "20");
+    svg.setAttribute("fill", "none");
+
+    const path = document.createElementNS(svgNamespace, "path");
+    if (type === 'success') {
+        path.setAttribute("fill", "#FFFFFF");
+        path.setAttribute("fill-rule", "evenodd");
+        path.setAttribute("clip-rule", "evenodd");
+        path.setAttribute("d", "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16ZM2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm13.633-3.274a1 1 0 0 1 .141 1.407l-4.5 5.5a1 1 0 0 1-1.481.074l-2-2a1 1 0 1 1 1.414-1.414l1.219 1.219 3.8-4.645a1 1 0 0 1 1.407-.141Z");
+    } else {
+        path.setAttribute("fill", "#FF4444");
+        path.setAttribute("d", "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z");
+    }
+    svg.appendChild(path);
+
+    const messageWrapper = document.createElement('div');
+    messageWrapper.style.cssText = "flex: 1 1 0%; padding-right: 16px;";
+
+    const messageContent = document.createElement('div');
+    messageContent.dir = "auto";
+    messageContent.style.cssText = "font-size: 15px; letter-spacing: 0px; color: rgb(255, 255, 255); font-weight: 500; line-height: 20px; pointer-events: none; font-variant: no-contextual;";
+    messageContent.textContent = message;
+
+    messageWrapper.appendChild(messageContent);
+    innerContainer.appendChild(svg);
+    innerContainer.appendChild(messageWrapper);
+    toast.appendChild(innerContainer);
 
     container.appendChild(toast);
 
