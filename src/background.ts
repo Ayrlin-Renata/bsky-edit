@@ -1,42 +1,40 @@
 import { BskyAgent } from '@atproto/api';
+import browser from 'webextension-polyfill';
 import { editPost, getPost, uploadBlob } from './api/bsky';
 
-console.log("BlueSky Edit: Background script loaded");
+console.log("[BlueSky Edit] Background script starting...");
 
 const agent = new BskyAgent({ service: 'https://bsky.social' });
 
-chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
-    (async () => {
-        try {
-            if (request.type === 'EDIT_POST') {
-                await handleEditPost(request);
-                sendResponse({ success: true });
-            } else if (request.type === 'GET_POST') {
-                const data = await handleGetPost(request);
-                sendResponse({ success: true, data });
-            } else if (request.type === 'UPLOAD_IMAGE') {
-                handleUploadImage(request, sendResponse);
-                return;
-            }
-        } catch (err: any) {
-            console.error(err);
-            sendResponse({ success: false, error: err.message });
+browser.runtime.onMessage.addListener(async (request: any) => {
+    console.log("[BlueSky Edit] Background received message:", request.type);
+    try {
+        if (request.type === 'EDIT_POST') {
+            await handleEditPost(request);
+            return { success: true };
+        } else if (request.type === 'GET_POST') {
+            const data = await handleGetPost(request);
+            return { success: true, data };
+        } else if (request.type === 'UPLOAD_IMAGE') {
+            return await handleUploadImage(request);
         }
-    })();
-    return true;
+    } catch (err: any) {
+        console.error('[BlueSky Edit] Message Listener Error:', err);
+        return { success: false, error: err.message || 'Unknown background error' };
+    }
 });
 
 async function getAgent(handle?: string, appPassword?: string) {
     if (agent.hasSession) return agent;
 
     if (!handle || !appPassword) {
-        const creds = await chrome.storage.local.get(['appPassword', 'handle']);
+        const creds = await browser.storage.local.get(['appPassword', 'handle']);
         handle = creds.handle as string;
         appPassword = creds.appPassword as string;
     }
 
     if (!appPassword || !handle) {
-        throw new Error('Please set up your credentials in the extension popup.');
+        return null;
     }
 
     await agent.login({ identifier: handle, password: appPassword });
@@ -46,18 +44,22 @@ async function getAgent(handle?: string, appPassword?: string) {
 async function handleGetPost(request: any) {
     const { uri } = request;
     const client = await getAgent();
+    if (!client) return null;
     return await getPost(uri, client);
 }
 
 async function handleEditPost(request: any) {
     const { originalUri, newText, newEmbed } = request;
     const client = await getAgent();
+    if (!client) throw new Error('AUTH_REQUIRED');
     await editPost(originalUri, newText, client, newEmbed);
 }
 
-async function handleUploadImage(message: any, sendResponse: (r: any) => void) {
+async function handleUploadImage(message: any) {
     try {
-        const agent = await getAgent();
+        const client = await getAgent();
+        if (!client) return { success: false, error: 'AUTH_REQUIRED' };
+
         const { base64Data, encoding } = message;
 
         const binaryString = atob(base64Data);
@@ -66,10 +68,10 @@ async function handleUploadImage(message: any, sendResponse: (r: any) => void) {
             bytes[i] = binaryString.charCodeAt(i);
         }
 
-        const blob = await uploadBlob(bytes, encoding, agent);
-        sendResponse({ success: true, blob });
+        const blob = await uploadBlob(bytes, encoding, client);
+        return { success: true, blob };
     } catch (err: any) {
         console.error('[BlueSky Edit] handleUploadImage Error:', err);
-        sendResponse({ success: false, error: err.message });
+        return { success: false, error: err.message };
     }
 }

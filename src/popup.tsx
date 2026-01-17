@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import browser from 'webextension-polyfill';
 import { AuthForm, ThemeColors } from './components/AuthForm';
 
 type ThemeMode = 'auto' | 'light' | 'dim' | 'dark';
@@ -14,16 +15,18 @@ const Popup = () => {
     const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dim' | 'dark'>('light');
 
     useEffect(() => {
-        chrome.storage.local.get(['appPassword', 'handle', 'themeMode'], (result) => {
+        const loadSettings = async () => {
+            const result = await browser.storage.local.get(['appPassword', 'handle', 'themeMode']);
             if (result.appPassword) setAppPassword(result.appPassword as string);
             if (result.handle) setHandle(result.handle as string);
             if (result.themeMode) setThemeMode(result.themeMode as ThemeMode);
-        });
+        };
+        loadSettings();
     }, []);
 
     useEffect(() => {
-        const updateTheme = () => {
-            chrome.storage.local.set({ themeMode });
+        const updateTheme = async () => {
+            await browser.storage.local.set({ themeMode });
 
             let mode = themeMode;
             if (mode === 'auto') {
@@ -38,13 +41,12 @@ const Popup = () => {
         updateTheme();
     }, [themeMode]);
 
-    const handleSave = () => {
+    const handleSave = async () => {
         setSaving(true);
-        chrome.storage.local.set({ appPassword, handle }, () => {
-            setSaving(false);
-            setStatus('Saved!');
-            setTimeout(() => setStatus(''), 2000);
-        });
+        await browser.storage.local.set({ appPassword, handle });
+        setSaving(false);
+        setStatus('Saved!');
+        setTimeout(() => setStatus(''), 2000);
     };
 
     const toggleTheme = () => {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import browser from 'webextension-polyfill';
 import { AuthForm, ThemeColors } from './AuthForm';
 import { HighlightTextarea } from './HighlightTextarea';
 import { compressImage } from '../utils/image';
@@ -22,7 +23,7 @@ interface EditModalProps {
     isAuthMissing: boolean;
     onClose: () => void;
     onSave: (newText: string, newEmbed?: any) => void;
-    onAuthSave: (creds: { handle: string, appPassword: string }) => Promise<void>;
+    onAuthSave: (creds: { handle: string, appPassword: string }) => Promise<any>;
 }
 
 type ThemeMode = 'auto' | 'light' | 'dim' | 'dark';
@@ -67,11 +68,13 @@ export const EditModal: React.FC<EditModalProps> = ({ originalText, originalEmbe
     const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dim' | 'dark'>(getInitialTheme);
 
     useEffect(() => {
-        chrome.storage.local.get(['themeMode'], (result) => {
+        const loadSettings = async () => {
+            const result = await browser.storage.local.get(['themeMode']);
             const storedMode = result.themeMode as ThemeMode;
             if (storedMode && storedMode !== 'auto') setResolvedTheme(storedMode);
             else setResolvedTheme(getInitialTheme());
-        });
+        };
+        loadSettings();
     }, []);
 
     const theme = colors[resolvedTheme];
@@ -87,9 +90,19 @@ export const EditModal: React.FC<EditModalProps> = ({ originalText, originalEmbe
     const handleAuthSubmit = async () => {
         if (!handle || !appPassword) return;
         setSaving(true);
-        await onAuthSave({ handle, appPassword });
-        setSaving(false);
-        setNeedsAuth(false);
+        try {
+            const postData = await onAuthSave({ handle, appPassword });
+            if (postData) {
+                if (postData.text) setText(postData.text);
+                if (postData.embedView) setViewEmbed(postData.embedView);
+                if (postData.embedRecord) setRecordEmbed(postData.embedRecord);
+            }
+            setNeedsAuth(false);
+        } catch (err) {
+            console.error('[BlueSky Edit] Auth Save Error:', err);
+        } finally {
+            setSaving(false);
+        }
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -149,13 +162,11 @@ export const EditModal: React.FC<EditModalProps> = ({ originalText, originalEmbe
                     reader.readAsDataURL(blob);
                 });
 
-                const response = await new Promise<any>((resolve) => {
-                    chrome.runtime.sendMessage({
-                        type: 'UPLOAD_IMAGE',
-                        base64Data,
-                        encoding: blob.type
-                    }, resolve);
-                });
+                const response = (await browser.runtime.sendMessage({
+                    type: 'UPLOAD_IMAGE',
+                    base64Data,
+                    encoding: blob.type
+                })) as any;
 
                 if (response.success) {
                     const localUrl = URL.createObjectURL(blob);

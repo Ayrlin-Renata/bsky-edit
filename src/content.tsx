@@ -1,7 +1,6 @@
 import { createRoot } from 'react-dom/client';
+import browser from 'webextension-polyfill';
 import { EditModal } from './components/EditModal';
-
-console.log("BlueSky Edit: Content script loaded");
 
 const modalContainer = document.createElement('div');
 modalContainer.id = 'bsky-edit-modal-root';
@@ -250,68 +249,78 @@ function showToast(message: string, type: 'success' | 'error' = 'success') {
 }
 
 function isContextValid() {
-    return !!(chrome.runtime && chrome.runtime.id);
+    return !!(browser.runtime && browser.runtime.id);
 }
 
-function handleEditClick(urlOrUri: string) {
+async function fetchPostDetails(urlOrUri: string) {
+    try {
+        const response = (await browser.runtime.sendMessage({ type: 'GET_POST', uri: urlOrUri })) as any;
+        if (response && response.success && response.data) {
+            return response.data;
+        } else {
+            console.error("Failed to fetch post:", response?.error);
+            // Fallback for current page or matched element
+            if (urlOrUri.startsWith('at://')) {
+                const postEl = document.querySelector(`[data-uri="${urlOrUri}"]`);
+                if (postEl) {
+                    const contentEl = postEl.querySelector('[data-testid="post-content"]');
+                    if (contentEl) return { text: contentEl.textContent || "" };
+                }
+            }
+        }
+    } catch (err: any) {
+        console.error('[BlueSky Edit] sendMessage Error:', err);
+    }
+    return null;
+}
+
+async function handleEditClick(urlOrUri: string) {
     if (!isContextValid()) {
         showToast('BlueSky Edit Extension updated. Please refresh the page to continue.', 'error');
         return;
     }
 
-    chrome.storage.local.get(['appPassword', 'handle'], (result) => {
-        const isAuthMissing = !result.appPassword || !result.handle;
+    const result = await browser.storage.local.get(['appPassword', 'handle']);
+    const isAuthMissing = !result.appPassword || !result.handle;
 
-        chrome.runtime.sendMessage({ type: 'GET_POST', uri: urlOrUri }, (response) => {
-            let currentText = "";
-            if (response && response.success && response.data) {
-                currentText = response.data.text;
-            } else {
-                console.error("Failed to fetch post:", response?.error);
-                if (urlOrUri.startsWith('at://') && lastInteractedPostUri === urlOrUri) {
-                    const postEl = document.querySelector(`[data-uri="${urlOrUri}"]`);
-                    if (postEl) {
-                        const contentEl = postEl.querySelector('[data-testid="post-content"]');
-                        if (contentEl) currentText = contentEl.textContent || "";
-                    }
+    let postData = null;
+    if (!isAuthMissing) {
+        postData = await fetchPostDetails(urlOrUri);
+    }
+
+    const props = {
+        originalText: postData?.text || "",
+        originalEmbed: postData?.embedView,
+        originalEmbedRecord: postData?.embedRecord,
+        isAuthMissing: isAuthMissing,
+        onClose: closeModal,
+        onAuthSave: async (creds: { handle: string, appPassword: string }) => {
+            await browser.storage.local.set(creds);
+            // After saving auth, try to fetch the post
+            const newData = await fetchPostDetails(urlOrUri);
+            return newData;
+        },
+        onSave: async (newText: string, newEmbed?: any) => {
+            try {
+                const editResponse = (await browser.runtime.sendMessage({
+                    type: 'EDIT_POST',
+                    originalUri: urlOrUri,
+                    newText,
+                    newEmbed
+                })) as any;
+
+                if (editResponse && editResponse.success) {
+                    console.log('[BlueSky Edit] Edit Success:', editResponse);
+                    showToast('Post updated successfully!', 'success');
+                } else {
+                    console.error('[BlueSky Edit] Edit Failed:', editResponse);
+                    showToast('Error: ' + (editResponse?.error || 'Unknown error'), 'error');
                 }
+            } catch (err: any) {
+                console.error('[BlueSky Edit] Edit sendMessage Error:', err);
+                showToast('Connection failed. Post could not be edited.', 'error');
             }
-
-            const props = {
-                originalText: currentText,
-                originalEmbed: response?.data?.embedView,
-                originalEmbedRecord: response?.data?.embedRecord,
-                isAuthMissing: isAuthMissing,
-                onClose: closeModal,
-                onAuthSave: (creds: { handle: string, appPassword: string }) => {
-                    return new Promise<void>((resolve) => {
-                        chrome.storage.local.set(creds, () => {
-                            resolve();
-                        });
-                    });
-                },
-                onSave: (newText: string, newEmbed?: any) => {
-                    return new Promise<void>((resolve, _reject) => {
-                        chrome.runtime.sendMessage({
-                            type: 'EDIT_POST',
-                            originalUri: urlOrUri,
-                            newText,
-                            newEmbed
-                        }, (editResponse) => {
-                            if (editResponse && editResponse.success) {
-                                console.log('[BlueSky Edit] Edit Success:', editResponse);
-                                showToast('Post updated successfully!', 'success');
-                                resolve();
-                            } else {
-                                console.error('[BlueSky Edit] Edit Failed:', editResponse);
-                                showToast('Error: ' + (editResponse?.error || 'Unknown error'), 'error');
-                                resolve();
-                            }
-                        });
-                    });
-                }
-            };
-            renderModal(props);
-        });
-    });
+        }
+    };
+    renderModal(props);
 }

@@ -1,11 +1,16 @@
 {
     "manifest_version": 3,
     "name": "BlueSky Edit",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "Adds an Edit function to the post menu on bsky.app.",
     "permissions": [
         "storage"
     ],
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "bsky-edit@ayrlin.dev"
+        }
+    },
     "host_permissions": [
         "https://bsky.app/*",
         "https://bsky.social/*"
@@ -20,7 +25,9 @@
         "default_icon": "bsky-edit.png"
     },
     "background": {
-        "service_worker": "background.js"
+        "scripts": [
+            "background.js"
+        ]
     },
     "content_scripts": [
         {
