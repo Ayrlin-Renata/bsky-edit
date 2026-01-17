@@ -15,3 +15,8 @@ I heard some people wanted an edit button, right on the bsky.app site, so I made
 - Your BlueSky handle and App Password are stored securely using `chrome.storage.local`.
 - No data is ever sent to external servers other than directly to the official BlueSky API.
 - Open source code at my GitHub.
+
+# Dev Notes
+## Building distribution files
+- Chrome: `npm run dist:chrome` 
+- Firefox: `npm run dist:firefox`
